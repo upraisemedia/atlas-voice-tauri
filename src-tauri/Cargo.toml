@@ -1,0 +1,33 @@
+[package]
+name = "atlas-voice"
+version = "0.1.0"
+description = "Local push-to-talk dictation for macOS"
+authors = ["Jochem van Krieken"]
+edition = "2021"
+rust-version = "1.90"
+
+[lib]
+# The `_lib` suffix keeps the lib name distinct from the bin name (cargo#8519).
+name = "atlas_voice_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "~2.7.0", features = [] }
+
+[dependencies]
+tauri = { version = "~2.12.0", features = ["tray-icon", "image-png"] }
+tauri-plugin-single-instance = "~2.5.0"
+tauri-plugin-log = "~2.10.0"
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+# Keep unwinding (NOT "abort"): inference and command boundaries rely on
+# `catch_unwind` to survive panics. See docs/decisions/0003-panics-and-shutdown.md.
+panic = "unwind"
+strip = true
