@@ -24,5 +24,12 @@ export default defineConfig(() => ({
     // WKWebView on macOS 14+ supports Safari 17 features.
     target: "safari17",
     sourcemap: false,
+    // Separate entries so the overlay does not load the main window's code.
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        overlay: "overlay.html",
+      },
+    },
   },
 }));

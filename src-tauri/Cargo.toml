@@ -15,13 +15,34 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "~2.7.0", features = [] }
 
 [dependencies]
-tauri = { version = "~2.12.0", features = ["tray-icon", "image-png"] }
+tauri = { version = "~2.12.0", features = ["tray-icon", "image-png", "macos-private-api"] }
 tauri-plugin-single-instance = "~2.5.0"
 tauri-plugin-log = "~2.10.0"
 log = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
+# Audio capture, lock-free handoff out of the realtime callback, resampling to 16 kHz.
+cpal = "~0.18.2"
+rtrb = "~0.4.0"
+rubato = "~5.0.0"
+# Local speech-to-text (ggml, Metal). Pre-1.0: pin exactly. ADR 0004.
+transcribe-cpp = "=0.2.4"
+# Global hotkeys incl. Fn and modifier-only keys, with press/release events.
+handy-keys = "~0.3.4"
+# Model downloads (streamed, checksummed).
+reqwest = { version = "~0.13.5", default-features = false, features = ["stream", "rustls"] }
+sha2 = "~0.11.0"
+futures-util = "0.3"
+tokio = { version = "1", features = ["fs", "io-util"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Non-activating overlay panel that never steals focus.
+tauri-nspanel = "~2.1.0"
+objc2 = "~0.6.4"
+objc2-foundation = "~0.3.2"
+objc2-app-kit = { version = "~0.3.2", features = ["NSPasteboard", "NSPasteboardItem", "NSWorkspace", "NSRunningApplication"] }
+objc2-core-graphics = { version = "~0.3.2", features = ["CGEvent", "CGEventSource", "CGEventTypes"] }
 
 [profile.release]
 codegen-units = 1

@@ -19,11 +19,11 @@ pub fn quit(app: &AppHandle) {
 
 /// Releases native resources. Idempotent, because both the explicit quit path
 /// and `RunEvent::Exit` call it.
-pub fn shutdown(_app: &AppHandle) {
+pub fn shutdown(app: &AppHandle) {
     if SHUTDOWN_STARTED.swap(true, Ordering::SeqCst) {
         return;
     }
     log::info!("shutting down");
-    // Subsystems (dictation controller, audio, inference worker) hook in here
-    // from phase 1 onwards, in reverse order of startup.
+    crate::services::shutdown(app);
+    log::info!("shutdown complete");
 }

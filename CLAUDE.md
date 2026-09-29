@@ -10,6 +10,7 @@ Local push-to-talk dictation for macOS: hold a key, speak, release, and the tran
 - Quality over speed. Handle errors explicitly, never store audio unless the user opts in, clean up processes on exit.
 - **Name every new dependency** (and why) before adding it. Pin versions (`~x.y` or exact for RC crates).
 - Record significant decisions as short ADRs in `docs/decisions/NNNN-title.md`.
+- Code copied/adapted from MIT projects: keep a header comment and add it to `THIRD_PARTY_NOTICES.md`. Never copy GPL/AGPL code.
 - Build in the phase order of `docs/plan.md` §5. Each phase ends testable.
 - Privacy: never log transcript text, audio or device names.
 
@@ -30,19 +31,31 @@ Run `make check` before every commit.
 
 ## Structure
 ```
+index.html / overlay.html  two Vite entries (main window, overlay pill)
 src/                    React 19 + TS + Vite + Tailwind 4 (Radix/zustand from phase 3)
-  main/                 main window entry (index.html → src/main/main.tsx)
-  overlay/              overlay pill entry (phase 1)
-  shared/               ipc.ts (typed invoke wrappers), theme.css (design tokens)
+  main/                 main window: App.tsx (status cards), useAppStatus.ts
+  overlay/              overlay pill (plain CSS, no Tailwind, tiny bundle)
+  shared/               ipc.ts (typed commands + events, mirrors Rust types), theme.css
 src-tauri/src/
   lib.rs                builder, plugins, run loop (ExitRequested / Exit / Reopen)
+  services.rs           starts subsystems, holds `Services` (managed state), shutdown order
   app/                  lifecycle (quit + shutdown), windows (Dock policy), menu, tray, logging
+  dictation/            state.rs = pure state machine + tests; controller.rs = actor thread
+  hotkey/               handy-keys: Fn (hold) + Esc (cancel); waits for Accessibility
+  audio/                cpal capture thread, rtrb ring buffer, rubato resample to 16 kHz
+  transcribe/           Transcriber trait; local.rs = transcribe-cpp on an inference thread
+  models/               catalog (pinned HF GGUF + sha256), streaming download
+  inject/               paste: pasteboard snapshot/restore + layout-aware Cmd+V (macos/)
+  overlay/              NSPanel pill (tauri-nspanel), shown/hidden per phase
   commands/             thin IPC layer, no business logic
   error.rs              AppError → serialised as { kind, message }
-docs/                   research.md, plan.md, decisions/
+docs/                   research.md, plan.md, decisions/ (ADRs)
 scripts/dev-app.sh      build + sign + launch debug .app
 ```
-Planned modules (phase 1+): `dictation/` (state machine actor), `hotkey/`, `audio/`, `transcribe/`, `models/`, `inject/`, `postprocess/`, `overlay/`, `settings/`, `storage/`, `permissions`.
+
+Data: models in `~/Library/Application Support/nl.atlasvoice.desktop/models/`, logs in `~/Library/Logs/nl.atlasvoice.desktop/`.
+
+Events Rust → UI: `dictation-state` (Phase), `dictation-notice`, `dictation-transcript`, `model-state`, `hotkey-status`. Keep `src/shared/ipc.ts` in sync when changing these types.
 
 ## Architecture rules (see docs/plan.md §1–2 and research.md §3)
 - Rust owns all state. React renders state and sends intents.
